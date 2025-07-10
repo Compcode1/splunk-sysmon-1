@@ -1,13 +1,88 @@
-The integration of Sysmon into the Windows host significantly enhanced our visibility across multiple attack stages simulated in this project. By comparing the Sysmon-generated telemetry (e.g., Event ID 1 for process creation) against prior native Windows Security logs, we confirmed several key improvements:
+Splunk Sysmon Baseline Visibility Upgrade
 
-Enhanced Fidelity: Sysmon delivered granular details including full command-line arguments, image hashes, parent process relationships, and user context — critical elements that were previously missing or only partially available.
+Project Summary
+This project upgrades Windows endpoint visibility by installing Sysmon with a default configuration and ingesting its logs into Splunk. The goal is to validate improved telemetry coverage across key attacker behaviors that were previously missed using native audit policies.
 
-Telemetry Gap Closure: Actions such as obfuscated PowerShell use, scheduled task persistence, Nmap scanning, and RDP/SMB probing were captured more reliably and with greater forensic clarity than before.
+Cybersecurity Battlefield Alignment
 
-Remaining Gaps: Despite Sysmon’s value, certain behavioral detections — like privilege elevation attempts that do not spawn new processes — still require complementary telemetry (e.g., ETW-based logging or EDR solutions).
+Strengthens Host Operating System layer, specifically:
 
-Our final assessment confirms that Sysmon is a necessary layer in any serious detection engineering strategy, particularly when operating without commercial EDR or NDR tools. Based on these findings, we recommend the following for future projects:
+Process Execution
 
-Use a vetted, minimal-noise Sysmon configuration (e.g., SwiftOnSecurity base + custom tuning) to ensure balance between coverage and log volume.
+Command-Line Logging
 
-Maintain rigorous version control of sysmon_config.xml alongside analysis notebooks in GitHub for reproducibility.
+Background Services (parent-child relationships)
+
+Enhances the Visibility and Telemetry Layer through:
+
+Sysmon logs captured from Microsoft-Windows-Sysmon/Operational
+
+Splunk-based SIEM correlation and triage
+
+Setup Summary
+
+Installed Sysmon using: Sysmon64.exe -accepteula -i
+
+Confirmed Event ID 1 (Process Create) and other logs were active in Event Viewer
+
+Configured Splunk input for Sysmon with:
+
+Channel: Microsoft-Windows-Sysmon/Operational
+
+Index: main
+
+Format: XML enabled
+
+Restarted Splunk to validate ingestion
+
+Tested Attacker Behaviors and Visibility Results
+
+Obfuscated PowerShell command using base64-encoded Start-Process notepad.exe
+
+Result: Captured via Sysmon Event ID 1 with full command-line visibility
+
+Scheduled Task created using schtasks /create /tn Updater2 /tr notepad.exe
+
+Result: Logged via Sysmon with full arguments and metadata
+
+Privilege enumeration using whoami /priv and icacls C:\Windows
+
+Result: Captured both commands with elevated context and process details
+
+RDP connection attempt using mstsc /v:192.168.56.102
+
+Result: Logged as process creation from PowerShell with full command-line
+
+SMB share access attempt using net use \\192.168.56.102\C$
+
+Result: Captured as process creation with command-line and user info
+
+Localhost Nmap scan using:
+
+nmap -sS -Pn -T4 -F 127.0.0.1
+
+nmap -sV -T4 127.0.0.1
+
+Result: Both executions logged via Sysmon with complete process lineage
+
+Key Outcomes
+
+Default Sysmon config captured attacker behaviors missed by Windows Event ID 4688
+
+Provided command-line, parent-child, and user context data for each process
+
+Enabled high-fidelity Splunk triage for early-stage attacks
+
+Showed immediate gains in visibility with minimal configuration effort
+
+Lessons Learned
+
+Native audit policy was insufficient for detecting encoded PowerShell and privilege inspection
+
+Sysmon is a critical upgrade for defender visibility when EDR is not present
+
+Even without tuning, Sysmon filled critical gaps in process telemetry
+
+Future projects should build on this baseline with enhanced Sysmon configurations (e.g., SwiftOnSecurity)
+
+
